@@ -63,6 +63,7 @@ fun SetupScreen(modifier: Modifier = Modifier) {
                 context.startActivity(intent)
             },
             shape = RectangleShape,
+
             modifier = Modifier.fillMaxWidth(0.8f).padding(4.dp)
         ) {
             Text("1. Enable Nova Keyboard")
