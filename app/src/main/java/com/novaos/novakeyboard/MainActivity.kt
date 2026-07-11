@@ -110,12 +110,12 @@ fun SetupScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(48.dp))
 
         Text(
-            text = "Version: 2.0.0",
+            text = "Version: 2.0.1",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "Build: 200.260710.2220",
+            text = "Build: 201.260710.2228",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

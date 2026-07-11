@@ -22,7 +22,10 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items as lazyItems
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -62,6 +65,7 @@ class NovaKeyboardService : InputMethodService(), LifecycleOwner, ViewModelStore
 
     private var isShifted by mutableStateOf(false)
     private var isSymbolMode by mutableStateOf(false)
+    private var isEmojiMode by mutableStateOf(false)
     private var isListening by mutableStateOf(false)
     private var isClipboardMode by mutableStateOf(false)
     private val clipboardHistory = mutableStateListOf<String>()
@@ -248,7 +252,7 @@ class NovaKeyboardService : InputMethodService(), LifecycleOwner, ViewModelStore
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            items(suggestions) { suggestion ->
+                            lazyItems(suggestions) { suggestion ->
                                 Text(
                                     text = suggestion,
                                     color = onKeyColor,
@@ -279,6 +283,8 @@ class NovaKeyboardService : InputMethodService(), LifecycleOwner, ViewModelStore
 
                 if (isClipboardMode) {
                     ClipboardView()
+                } else if (isEmojiMode) {
+                    EmojiView()
                 } else {
                     currentKeys.forEach { row ->
                         Row(
@@ -336,7 +342,10 @@ class NovaKeyboardService : InputMethodService(), LifecycleOwner, ViewModelStore
                                     provideFeedback(); isSymbolMode = !isSymbolMode
                                 }
                                 KeyButton(text = "/", modifier = Modifier.weight(1f)) { provideFeedback(); handleKeyPress("/") }
-                                KeyButton(text = "😀", modifier = Modifier.weight(1f)) { provideFeedback() /* Emoji placeholder */ }
+                                KeyButton(text = "😀", modifier = Modifier.weight(1f)) { 
+                                    provideFeedback()
+                                    isEmojiMode = !isEmojiMode
+                                }
                                 KeyButton(text = "Space", modifier = Modifier.weight(4f)) { provideFeedback(); handleKeyPress(" ") }
                                 KeyButton(text = ".", modifier = Modifier.weight(1f)) { provideFeedback(); handleKeyPress(".") }
                                 KeyButton(
@@ -348,6 +357,55 @@ class NovaKeyboardService : InputMethodService(), LifecycleOwner, ViewModelStore
                                 }
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun EmojiView() {
+        val emojis = listOf(
+            "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇",
+            "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚",
+            "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩",
+            "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣",
+            "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬",
+            "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗",
+            "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯",
+            "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐",
+            "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠", "😈"
+        )
+        
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+        ) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item { Text("Recent", color = accentColor, fontSize = 12.sp) }
+                item { Text("Smileys", color = onKeyColor.copy(alpha = 0.6f), fontSize = 12.sp) }
+            }
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(8),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(8.dp)
+            ) {
+                gridItems(emojis) { emoji ->
+                    Box(
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .clickable {
+                                provideFeedback()
+                                currentInputConnection?.commitText(emoji, 1)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = emoji, fontSize = 24.sp)
                     }
                 }
             }
@@ -380,7 +438,7 @@ class NovaKeyboardService : InputMethodService(), LifecycleOwner, ViewModelStore
                     contentPadding = PaddingValues(horizontal = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    items(clipboardHistory) { clip ->
+                    lazyItems(clipboardHistory) { clip ->
                         Surface(
                             modifier = Modifier
                                 .widthIn(max = 200.dp)
