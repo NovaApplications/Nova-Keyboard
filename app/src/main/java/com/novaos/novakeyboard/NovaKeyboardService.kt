@@ -380,7 +380,7 @@ class NovaKeyboardService : InputMethodService(), LifecycleOwner, ViewModelStore
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(250.dp) // Increased height to accommodate bottom bar
         ) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth().padding(8.dp),
@@ -392,7 +392,7 @@ class NovaKeyboardService : InputMethodService(), LifecycleOwner, ViewModelStore
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(8),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(8.dp)
             ) {
                 gridItems(emojis) { emoji ->
@@ -407,6 +407,34 @@ class NovaKeyboardService : InputMethodService(), LifecycleOwner, ViewModelStore
                     ) {
                         Text(text = emoji, fontSize = 24.sp)
                     }
+                }
+            }
+
+            // Emoji Navigation / Bottom Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                KeyButton(
+                    text = "ABC",
+                    modifier = Modifier.weight(1.5f),
+                    containerColor = keyColor
+                ) {
+                    provideFeedback()
+                    isEmojiMode = false
+                }
+                
+                Spacer(modifier = Modifier.weight(4f))
+                
+                KeyButton(
+                    text = "⌫",
+                    modifier = Modifier.weight(1.5f),
+                    containerColor = keyColor
+                ) {
+                    provideFeedback()
+                    handleKeyPress("⌫")
                 }
             }
         }

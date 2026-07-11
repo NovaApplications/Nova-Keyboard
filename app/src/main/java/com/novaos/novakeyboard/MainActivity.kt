@@ -3,6 +3,7 @@ package com.novaos.novakeyboard
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
@@ -97,6 +98,21 @@ fun SetupScreen(modifier: Modifier = Modifier) {
             Text(if (hasMicPermission) "Microphone Permission Granted" else "3. Grant Mic Permission (Voice)")
         }
         
+        Button(
+            onClick = {
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.data = Uri.parse("https://github.com/NovaApplications/Nova-Keyboard/releases")
+                context.startActivity(intent)
+            },
+            shape = RectangleShape,
+            modifier = Modifier.fillMaxWidth(0.8f).padding(4.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiary
+            )
+        ) {
+            Text("Check for Updates")
+        }
+        
         Spacer(modifier = Modifier.height(32.dp))
         
         OutlinedTextField(
@@ -110,12 +126,12 @@ fun SetupScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(48.dp))
 
         Text(
-            text = "Version: 2.0.1",
+            text = "Version: 2.0.2",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "Build: 201.260710.2228",
+            text = "Build: 202.260710.2252",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
