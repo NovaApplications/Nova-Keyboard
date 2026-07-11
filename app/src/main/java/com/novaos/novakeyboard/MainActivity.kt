@@ -3,9 +3,9 @@ package com.novaos.novakeyboard
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,6 +23,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.novaos.novakeyboard.ui.theme.NovaKeyboardTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,11 +47,30 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SetupScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var testText by remember { mutableStateOf("") }
+    var updateStatus by remember { mutableStateOf<String?>(null) }
+    var isCheckingUpdates by remember { mutableStateOf(false) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
+
+    val currentVersion = "2.0.3"
     
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { _ -> }
+
+    if (showUpdateDialog) {
+        AlertDialog(
+            onDismissRequest = { showUpdateDialog = false },
+            title = { Text("Update Check") },
+            text = { Text(updateStatus ?: "Checking for updates...") },
+            confirmButton = {
+                TextButton(onClick = { showUpdateDialog = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -100,17 +125,29 @@ fun SetupScreen(modifier: Modifier = Modifier) {
         
         Button(
             onClick = {
-                val intent = Intent(Intent.ACTION_VIEW)
-                intent.data = Uri.parse("https://github.com/NovaApplications/Nova-Keyboard/releases")
-                context.startActivity(intent)
+                isCheckingUpdates = true
+                showUpdateDialog = true
+                updateStatus = "Connecting to GitHub..."
+                scope.launch {
+                    val result = checkGitHubForUpdates()
+                    updateStatus = if (result == null) {
+                        "Failed to check for updates. Please try again later."
+                    } else if (result == currentVersion) {
+                        "Nova Keyboard is up to date! (v$result)"
+                    } else {
+                        "A new version is available: v$result\nVisit GitHub to download."
+                    }
+                    isCheckingUpdates = false
+                }
             },
             shape = RectangleShape,
             modifier = Modifier.fillMaxWidth(0.8f).padding(4.dp),
+            enabled = !isCheckingUpdates,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.tertiary
             )
         ) {
-            Text("Check for Updates")
+            Text(if (isCheckingUpdates) "Checking..." else "Check for Updates")
         }
         
         Spacer(modifier = Modifier.height(32.dp))
@@ -126,12 +163,12 @@ fun SetupScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(48.dp))
 
         Text(
-            text = "Version: 2.0.2",
+            text = "Version: 2.0.3",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "Build: 202.260710.2252",
+            text = "Build: 203.260710.2303",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -143,5 +180,28 @@ fun SetupScreen(modifier: Modifier = Modifier) {
 fun SetupScreenPreview() {
     NovaKeyboardTheme {
         SetupScreen()
+    }
+}
+
+private suspend fun checkGitHubForUpdates(): String? = withContext(Dispatchers.IO) {
+    try {
+        val url = URL("https://api.github.com/repos/NovaApplications/Nova-Keyboard/releases/latest")
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 5000
+        connection.readTimeout = 5000
+        
+        if (connection.responseCode == 200) {
+            val response = connection.inputStream.bufferedReader().readText()
+            val json = JSONObject(response)
+            val tagName = json.getString("tag_name")
+            // Strip 'v' if present (e.g. v2.0.3 -> 2.0.3)
+            tagName.replace("v", "")
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        Log.e("NovaKeyboard", "Update check failed", e)
+        null
     }
 }
